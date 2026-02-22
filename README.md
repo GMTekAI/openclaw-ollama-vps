@@ -124,6 +124,51 @@ Re-running the installer updates Ollama in place. Your pulled models are preserv
 
 ---
 
+---
+
+## Troubleshooting
+
+### OpenClaw cannot connect to Ollama ("connection refused" / "ECONNREFUSED")
+
+By default Ollama binds to `127.0.0.1:11434` (localhost only). If OpenClaw is running on a different machine or hitting the VPS IP directly, requests will be refused.
+
+**Fix:** set `OLLAMA_HOST=0.0.0.0` in the Ollama systemd service so it listens on all interfaces:
+
+```bash
+# Edit the service file
+sudo sed -i 's|Environment="PATH=|Environment="OLLAMA_HOST=0.0.0.0"\nEnvironment="OLLAMA_ORIGINS=*"\nEnvironment="PATH=|' /etc/systemd/system/ollama.service
+sudo systemctl daemon-reload
+sudo systemctl restart ollama
+
+# Verify it is now bound to all interfaces (should show *:11434)
+ss -tlnp | grep 11434
+```
+
+The updated `setup.sh` in this repo does this automatically on fresh installs.
+
+### Intermittent DNS failures / outbound requests timing out
+
+On Ubuntu 22.04 / 24.04 with `systemd 255`, `systemd-resolved` can crash with:
+
+```
+Assertion 's->read_packet->family == AF_INET6' failed  Aborting.
+```
+
+This kills DNS resolution until the service auto-restarts, causing transient failures when Ollama tries to pull models or when the VPS makes any outbound HTTP request.
+
+**Fix:** disable DNS-over-TLS streaming (which triggers the IPv6 assertion bug):
+
+```bash
+sudo mkdir -p /etc/systemd/resolved.conf.d
+sudo tee /etc/systemd/resolved.conf.d/disable-dns-tcp.conf << 'EOF'
+[Resolve]
+DNSOverTLS=no
+EOF
+sudo systemctl restart systemd-resolved
+```
+
+The updated `setup.sh` applies this fix automatically.
+
 ## Contributing / Submitting Upstream
 
 This repo is intended as a reference implementation and deployment guide. If you adapt it, fix bugs, or add support for new model behaviours, please:
