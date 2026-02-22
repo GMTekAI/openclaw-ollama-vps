@@ -53,10 +53,11 @@ echo "   4) Skip (pull manually with: ollama pull <model>)"
 echo ""
 read -rp "Enter choice [1-4]: " choice
 
+CHOSEN_MODEL=""
 case $choice in
-  1) ollama pull llama3.1:8b ;;
-  2) ollama pull llama3.2:3b ;;
-  3) ollama pull qwen2.5:7b ;;
+  1) ollama pull llama3.1:8b && CHOSEN_MODEL="llama3.1:8b" ;;
+  2) ollama pull llama3.2:3b && CHOSEN_MODEL="llama3.2:3b" ;;
+  3) ollama pull qwen2.5:7b && CHOSEN_MODEL="qwen2.5:7b" ;;
   4) echo "Skipping model pull." ;;
   *) echo "Invalid choice, skipping." ;;
 esac
@@ -66,7 +67,11 @@ echo "==> Ollama setup complete."
 echo "   API available at: http://localhost:11434"
 echo "   External API:     http://$(hostname -I | awk '{print $1}'):11434"
 echo ""
-echo "==> Next: configure OpenClaw to use local mode:"
-echo "   openclaw config set gateway.mode local"
-echo "   openclaw config set provider ollama"
+echo "==> Configuring OpenClaw to use local Ollama mode..."
+openclaw config set gateway.mode local
+openclaw config set provider ollama
+if [ -n "$CHOSEN_MODEL" ]; then
+  openclaw config set agents.defaults.model.primary "ollama/$CHOSEN_MODEL"
+  echo "   Primary model set to: ollama/$CHOSEN_MODEL"
+fi
 echo ""
