@@ -47,7 +47,7 @@ Or do it manually:
 ```bash
 curl -fsSL https://ollama.com/install.sh | sh
 systemctl enable ollama && systemctl start ollama
-ollama pull llama3.1:8b
+ollama pull llama3.2:3b
 ```
 
 ### 2. Verify Ollama is running
